@@ -7,9 +7,8 @@ Class AirportParser {
         'password'    => 'tOcO!@#456',
         'db'          => 'obs_test'
     ];
-//  Добавление информации из csv в базу данных
-//  $filename = адрес файла csv
-
+    // Добавление информации из csv в базу данных
+    //$filename = адрес файла csv
   function csvToDb($filename='', $delimiter=',')
   {
       $con = mysqli_connect($this->db['host'], $this->db['username'], $this->db['password'], $this->db['db']);
