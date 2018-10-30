@@ -1,22 +1,37 @@
 <?php
-Class AirportParser {
+Class Database{
     //Настройки базы данных
+    public $con;
     private $db = [
-        'host'        => '',
-        'username'    => '',
-        'password'    => '',
-        'db'          => ''
+        'host'        => 'dev-task.ru:3306',
+        'username'    => 'remote',
+        'password'    => 'tOcO!@#456',
+        'db'          => 'obs_test'
     ];
+    function open(){
+        $this->con = mysqli_connect($this->db['host'], $this->db['username'], $this->db['password'], $this->db['db']);
+        if (!$this->con) {
+            return 'Ошибка подключения к базы данных ' . mysqli_error();
+        } else return $this->con;
+    }
+    function insert($query){
+        if(!empty($this->con)) {
+            mysqli_query($this->con,$query);
+        }
+    }
+    function close(){
+        if(!empty($this->con)) {
+            mysqli_close($this->con);
+        }
+    }
+}
+Class AirportParser {
+
     // Добавление информации из csv в базу данных
     //$filename = адрес файла csv
   function csvToDb($filename='', $delimiter=',')
   {
-      $con = mysqli_connect($this->db['host'], $this->db['username'], $this->db['password'], $this->db['db']);
-      if (!$con) {
-           die('Ошибка подключения к базы данных ' . mysqli_error());
-      } else {
-          echo 'Подключение к базы данных успешно';
-      }
+      $database = new Database;
       //здесь первая часть запоса к которой прикрепляем все данные
       $query = "INSERT INTO `airport-codes_csv` (
                     ident,
@@ -39,6 +54,7 @@ Class AirportParser {
       $header = NULL;
       if (($handle = fopen($filename, 'r')) !== FALSE)
       {   // 1000 это длина строки
+          $database->open();
           while (($row = fgetcsv($handle, 1000, $delimiter)) !== FALSE) {
               if($count < 1000){
                   if (!$header){
@@ -66,16 +82,17 @@ Class AirportParser {
                   }
               } else{
                   //Запись 1000 строк в базу данных
-                  mysqli_query($con, $query . implode(',', $values));
+                  $database->insert($query . implode(',', $values));
                   $values = [];
                   $count = 0;
               }
           }
           if(!empty($values)){
               //если в конце меньше 1000 строк то добавляем оставшийся данные в базу данных
-              mysqli_query($con, $query . implode(',', $values));
+              $database->insert($query . implode(',', $values));
           }
           fclose($handle);
+          $database->close();
       }
   }
 }
