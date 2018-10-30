@@ -3,10 +3,10 @@ Class Database{
     //Настройки базы данных
     public $con;
     private $db = [
-        'host'        => 'dev-task.ru:3306',
-        'username'    => 'remote',
-        'password'    => 'tOcO!@#456',
-        'db'          => 'obs_test'
+        'host'        => '',
+        'username'    => '',
+        'password'    => '',
+        'db'          => ''
     ];
     function open(){
         $this->con = mysqli_connect($this->db['host'], $this->db['username'], $this->db['password'], $this->db['db']);
