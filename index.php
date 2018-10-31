@@ -1,5 +1,6 @@
 <?php
-Class Database{
+class Database
+{
     //Настройки базы данных
     public $con;
     private $db = [
@@ -8,30 +9,54 @@ Class Database{
         'password'    => '',
         'db'          => ''
     ];
-    function open(){
+    //Функция открытия соединения с базой данных
+    function open()
+    {
         $this->con = mysqli_connect($this->db['host'], $this->db['username'], $this->db['password'], $this->db['db']);
         if (!$this->con) {
             return 'Ошибка подключения к базы данных ' . mysqli_error();
-        } else return $this->con;
-    }
-    function insert($query){
-        if(!empty($this->con)) {
-            mysqli_query($this->con,$query);
+        } else {
+            return $this->con;
         }
     }
-    function close(){
-        if(!empty($this->con)) {
-            mysqli_close($this->con);
+    //функция всакки данных в базу данных
+    function insert($query)
+    {
+        if (!empty($this->con)) {
+            $result = mysqli_query($this->con,$query);
+            if (empty($result)) {
+                return "Ошибка при добавлении данных в БД - добавлено 0 строк";
+            } else {
+                return $result;
+            }
+        }
+    }
+    //Функция закрытия соединения с базой данных
+    function close()
+    {
+        if (!empty($this->con)) {
+            $result = mysqli_close($this->con);
+            if (empty($result)) {
+                return "Не смог закрыть соединение к БД";
+            } else {
+                return $result;
+            }
         }
     }
 }
-Class AirportParser {
-
-    // Добавление информации из csv в базу данных
+Class AirportParser
+{
+    //Метод добавления информации из csv в базу данных
     //$filename = адрес файла csv
-  function csvToDb($filename='', $delimiter=',')
-  {
-      $database = new Database;
+    public $database;
+    public function __construct()
+    {
+        $this->database = new Database;
+    }
+
+    function csvToDb($filename='', $delimiter=',')
+    {
+
       //здесь первая часть запоса к которой прикрепляем все данные
       $query = "INSERT INTO `airport-codes_csv` (
                     ident,
@@ -47,20 +72,18 @@ Class AirportParser {
                     local_code,
                     coordinates
                 ) VALUES  ";
-      if(!file_exists($filename) || !is_readable($filename)) {
-          return FALSE;
+      if (!file_exists($filename) || !is_readable($filename)) {
+          return false;
       }
+      //Счётчик записей
       $count = 0;
-      $header = NULL;
-      if (($handle = fopen($filename, 'r')) !== FALSE)
-      {   // 1000 это длина строки
-          $database->open();
-          while (($row = fgetcsv($handle, 1000, $delimiter)) !== FALSE) {
-              if($count < 1000){
-                  if (!$header){
-                      $header = $row;
-                  }
-                  else {
+      $header = null;
+      if (($handle = fopen($filename, 'r')) !== false) {
+          // 1000 это длина строки
+          $this->database->open();
+          fgetcsv($handle, 1000, $delimiter);
+          while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
+              if ($count < 1000) {
                       $name = str_replace('\'',' ',$row[2]);
                       $municipality = str_replace('\'',' ',$row[7]);
                       //здесь формируеться масив для запроса
@@ -79,22 +102,21 @@ Class AirportParser {
                           '{$row[11]}'
                           )";
                       $count++;
-                  }
-              } else{
+              } else {
                   //Запись 1000 строк в базу данных
-                  $database->insert($query . implode(',', $values));
+                  $this->database->insert($query . implode(',', $values));
                   $values = [];
                   $count = 0;
               }
           }
-          if(!empty($values)){
+          if (!empty($values)) {
               //если в конце меньше 1000 строк то добавляем оставшийся данные в базу данных
-              $database->insert($query . implode(',', $values));
+              $this->database->insert($query . implode(',', $values));
           }
           fclose($handle);
-          $database->close();
+          $this->database->close();
       }
-  }
+    }
 }
 $airpot = new AirportParser;
 $airpot->csvToDb("airport-codes_csv.csv");
